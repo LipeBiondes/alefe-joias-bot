@@ -42,6 +42,7 @@ exports.extractDataFromMessage = (webMessage) => {
       replyJid: null,
       userJid: null,
       fromMe: null,
+      pushName: null,
     };
   }
 
@@ -64,6 +65,8 @@ exports.extractDataFromMessage = (webMessage) => {
   const prefix = command.charAt(0);
 
   const commandWithoutPrefix = command.replace(new RegExp(`^[${PREFIX}]+`), "");
+  const remoteJid = webMessage?.key?.remoteJid;
+  const pushName = webMessage?.pushName;
 
   return {
     args: this.splitByCharacters(args.join(" "), ["\\", "|", "/"]),
@@ -72,10 +75,11 @@ exports.extractDataFromMessage = (webMessage) => {
     fullMessage,
     isReply,
     prefix,
-    remoteJid: webMessage?.key?.remoteJid,
+    remoteJid,
     replyJid,
     userJid,
     fromMe,
+    pushName,
   };
 };
 

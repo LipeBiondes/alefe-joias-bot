@@ -14,12 +14,23 @@ exports.dynamicCommand = async (paramsHandler) => {
     sendErrorReply,
     verifyUserExist,
     fromMe,
+    fullMessage,
+    sendText,
   } = paramsHandler;
 
   const { type, command } = findCommandImport(commandName);
 
   if (!verifyPrefix(prefix) || !hasTypeOrCommand({ type, command })) {
     if (!fromMe) {
+      const message = fullMessage.replace(/\D/g, "");
+      if (message === "1") {
+        await sendText("O preço da grama do ouro é R$ 600,00 reais 💵.");
+        return;
+      }
+      if (message === "2") {
+        await sendText("Você não possui pedidos pendentes 😉.");
+        return;
+      }
       verifyUserExist();
     }
 

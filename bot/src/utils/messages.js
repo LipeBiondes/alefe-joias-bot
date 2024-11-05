@@ -1,22 +1,12 @@
-const { BOT_NAME, PREFIX } = require("../config");
-
 exports.waitMessage = "Carregando dados...";
 
 exports.menuMessage = () => {
-  const date = new Date();
+  const menu =
+    "Sobre o que você deseja falar? Digite a opção desejada." +
+    "\n\n" +
+    "*1.Preço da grama do ouro,*" +
+    "\n" +
+    "*2.Ver seus pedidos pendentes.*";
 
-  return ` BEM VINDO A ALEFE JÓIAS!
-
- • ${BOT_NAME}
- • Data: ${date.toLocaleDateString("pt-br")}
- • Hora: ${date.toLocaleTimeString("pt-br")}
- • Prefixo: ${PREFIX}
-
-╭━━⪩ MENU ⪨━━
-▢
-▢ • ${PREFIX}ping
-▢ • ${PREFIX}sticker
-▢ • ${PREFIX}cadastro
-▢
-╰━━─「🚀」─━━`;
+  return menu;
 };
