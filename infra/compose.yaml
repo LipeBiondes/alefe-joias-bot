@@ -1,9 +1,0 @@
-services:
-  database:
-    container_name: "mysql-dev"
-    image: "mysql"
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=alefe
-    ports:
-      - "3306:3306"
