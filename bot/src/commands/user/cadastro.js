@@ -4,7 +4,7 @@ const { PREFIX } = require("../../config");
 
 module.exports = {
   name: "cadastro",
-  description: "Realizar o cadastro de um usuaio",
+  description: "Realizar o cadastro de um usuário",
   commands: ["cadastro"],
   usage: `${PREFIX}cadastro`,
   handle: async ({ args, createUser }) => {
