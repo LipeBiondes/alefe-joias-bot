@@ -1,4 +1,4 @@
-const { version } = require("../../../package.json");
+const { version } = require("../../package.json");
 
 exports.sayLog = (message) => {
   console.log("\x1b[36m[ALEFE-JOIAS BOT | TALK]\x1b[0m", message);
