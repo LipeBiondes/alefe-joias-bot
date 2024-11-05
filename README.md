@@ -44,3 +44,4 @@ O `alefe-joias-bot` é um sistema que utiliza a biblioteca Baileys para se conec
 ## Mudanças no Repositório
 
 Decidimos remover a API deste repositório e criar um repositório separado para a API, a fim de facilitar o desenvolvimento e a manutenção do projeto.
+[api](https://github.com/LipeBiondes/alefe-joias-api-bot)
