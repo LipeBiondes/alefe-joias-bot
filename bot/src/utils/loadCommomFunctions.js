@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 const { BOT_EMOJI } = require("../config");
 const { extractDataFromMessage, baileysIs, download } = require(".");
-const { waitMessage } = require("./messages");
+const { waitMessage, menuMessage } = require("./messages");
 const fs = require("fs");
 const api = require("./axios");
 const removeCaracter = require("./removeCaracterToNumber");
@@ -18,6 +18,7 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     replyJid,
     userJid,
     fromMe,
+    pushName,
   } = extractDataFromMessage(webMessage);
 
   if (!remoteJid || remoteJid.includes("@g.us")) {
@@ -170,25 +171,50 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
   };
 
   const verifyUserExist = async () => {
-    const textResponseUserNotExist = `Seja bem vindo, vamos fazer seu cadastro? 
-  Responda com */cadastro seu-nome-completo* para realizar o cadastro!`;
-    const textResponseUserExist = (name) => {
-      return `Seja bem vindo: ${name}
-  Responda com */menu* para ver os comandos disponíveis!`;
-    };
+    const textResponseUserNotExist =
+      "Seja bem vindo(a)! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar" +
+      "\n\n" +
+      "Aguarde um momento enquanto realizo seu cadastro!";
+
+    const textResponseUserExist =
+      "Seja bem vindo(a): " +
+      pushName +
+      "! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar.";
 
     await api
       .get(`/user/${remoteJid}`)
-      .then(async (response) => {
-        await sendText(textResponseUserExist(response.data.user.name));
+      .then(async () => {
+        await sendText(textResponseUserExist);
+        await sendText(menuMessage());
       })
-      .catch(async () => {
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Seja bem vindo(a)! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar",
+          );
+          await sendText(
+            "Houve um erro ao tentar realizar seu cadastro, tente novamente mais tarde!",
+          );
+          return;
+        }
+
         await sendText(textResponseUserNotExist);
+        await createUser(pushName);
       });
   };
 
   const createUser = async (name) => {
-    phone = removeCaracter(remoteJid);
+    const phone = removeCaracter(remoteJid);
+
+    const textResponseUserExist =
+      "Seja bem vindo(a): " +
+      name +
+      "! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar.";
+
+    const textResponseUserCreatedSuccessfully =
+      "Seu cadastro foi realizado com sucesso! ";
+
     await api
       .post("/user", {
         name,
@@ -197,13 +223,22 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       .then(async (response) => {
         if (response.status === 204) {
           await sendSuccessReact();
-          await sendText("Cadastro realizado com sucesso!");
+          await sendText(textResponseUserCreatedSuccessfully);
+          await sendText(menuMessage());
         }
       })
       .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Houve um erro ao tentar realizar o cadastro tente novamente mais tarde!",
+          );
+          return;
+        }
         if (err.response.status === 409) {
           await sendErrorReact();
-          await sendText("Usuario já cadastrado!");
+          await sendText(textResponseUserExist);
+          await sendText(menuMessage());
           return;
         }
         await sendErrorReact();
