@@ -16,22 +16,50 @@ exports.dynamicCommand = async (paramsHandler) => {
     fromMe,
     fullMessage,
     sendText,
+    createTicket,
+    checkIfTheUserHasATicket,
+    closeTicket,
   } = paramsHandler;
 
   const { type, command } = findCommandImport(commandName);
 
   if (!verifyPrefix(prefix) || !hasTypeOrCommand({ type, command })) {
     if (!fromMe) {
-      const message = fullMessage.replace(/\D/g, "");
-      if (message === "1") {
-        await sendText("O preço da grama do ouro é R$ 600,00 reais 💵.");
+      const hasTicket = await checkIfTheUserHasATicket();
+      const timeToClose = 1000 * 60 * 30;
+
+      if (hasTicket) {
         return;
+      } else {
+        const message = fullMessage.replace(/\D/g, "");
+        if (message === "1") {
+          await sendText("O preço da grama do ouro é R$ 600,00 reais 💵.");
+          return;
+        }
+        if (message === "2") {
+          await sendText("Você não possui pedidos pendentes 😉.");
+          return;
+        }
+        if (message === "3") {
+          await createTicket();
+
+          setTimeout(async () => {
+            const hasTicket = await checkIfTheUserHasATicket();
+
+            if (hasTicket) {
+              await sendText(
+                "Já se passaram 30 minutos, o ticket será fechado automaticamente 😅.",
+              );
+
+              await closeTicket();
+            }
+
+            return;
+          }, timeToClose);
+          return;
+        }
+        verifyUserExist();
       }
-      if (message === "2") {
-        await sendText("Você não possui pedidos pendentes 😉.");
-        return;
-      }
-      verifyUserExist();
     }
 
     return;
