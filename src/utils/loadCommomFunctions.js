@@ -248,6 +248,164 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       });
   };
 
+  const createTicket = async () => {
+    const userId = await api
+      .get(`/user/${remoteJid}`)
+      .then((response) => {
+        return response.data.user.id;
+      })
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Não foi possivel realizer essa operação tente novamente mais tarde!",
+          );
+          return false;
+        }
+        return false;
+      });
+
+    const title = "Atendimento";
+    const description = "Atendimento solicitado pelo cliente";
+
+    const textResponseTicketCreatedSuccessfully =
+      "Você foi encaminhado para um atendente, aguarde um pouco que logo ele vai te responder ⏳";
+
+    const textResponseTicketCreatedError =
+      "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!";
+
+    await api
+      .post("/ticket", { title, description, userId })
+      .then(async () => {
+        await sendSuccessReact();
+        await sendText(textResponseTicketCreatedSuccessfully);
+      })
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Não foi possivel realizer essa operação tente novamente mais tarde!",
+          );
+          return;
+        }
+        await sendErrorReact();
+        await sendText(textResponseTicketCreatedError);
+      });
+  };
+
+  const checkIfTheUserHasATicket = async () => {
+    const userId = await api
+      .get(`/user/${remoteJid}`)
+      .then((response) => {
+        return response.data.user.id;
+      })
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          return false;
+        }
+        return false;
+      });
+
+    if (userId === false) {
+      return false;
+    }
+    if (userId !== false) {
+      const ticket = await api
+        .get(`/tickets/${userId}`)
+        .then(async (response) => {
+          const tickets = response.data.ticket;
+          if (tickets.length === 0) {
+            return false;
+          }
+          return true;
+        })
+        .catch(async (err) => {
+          if (err.code === "ECONNREFUSED") {
+            return false;
+          }
+          return false;
+        });
+
+      return ticket;
+    }
+  };
+
+  const closeTicket = async () => {
+    const textResponseTicketClosedError =
+      "Houve um erro ao tentar encerrar o atendimento, tente novamente mais tarde!";
+
+    const user = await api
+      .get(`/user/${remoteJid}`)
+      .then((response) => {
+        return response.data.user;
+      })
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Não foi possivel realizer essa operação tente novamente mais tarde!",
+          );
+          return false;
+        }
+        await sendErrorReact();
+        await sendText(
+          "Não foi possivel realizer essa operação tente novamente mais tarde!",
+        );
+        return false;
+      });
+
+    if (user !== false) {
+      const ticket = await api
+        .get(`/tickets/${user.id}`)
+        .then((response) => {
+          return response.data.ticket;
+        })
+        .catch(async (err) => {
+          if (err.code === "ECONNREFUSED") {
+            await sendErrorReact();
+            await sendText(
+              "Não foi possivel realizer essa operação tente novamente mais tarde!",
+            );
+            return false;
+          }
+
+          if (err.response.status === 404) {
+            await sendErrorReact();
+            await sendText("Esse usuario não possui atendimento em aberto!");
+            return false;
+          }
+
+          await sendErrorReact();
+          await sendText(textResponseTicketClosedError);
+          return false;
+        });
+
+      if (ticket !== false) {
+        ticket.forEach(async (ticket) => {
+          await api
+            .delete(`/ticket/${ticket.id}`)
+            .then(async () => {
+              await sendSuccessReact();
+              await sendText(
+                `Atenção ${user.name}! O ticket: ${ticket.id} foi resolvido e seu atendimento foi encerrado!`,
+              );
+            })
+            .catch(async (err) => {
+              if (err.code === "ECONNREFUSED") {
+                await sendErrorReact();
+                await sendText(
+                  "Não foi possivel realizer essa operação tente novamente mais tarde!",
+                );
+                return;
+              }
+              await sendErrorReact();
+              await sendText(textResponseTicketClosedError);
+            });
+        });
+      }
+    }
+  };
+
   return {
     args,
     commandName,
@@ -286,5 +444,8 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     sendWarningReply,
     createUser,
     verifyUserExist,
+    createTicket,
+    checkIfTheUserHasATicket,
+    closeTicket,
   };
 };
