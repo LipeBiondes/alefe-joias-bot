@@ -12,8 +12,4 @@ const sendMessage = async (req, res, socket) => {
   }
 };
 
-const sendHello = async (req, res) => {
-  res.status(201).send("Hello World!");
-};
-
-module.exports = { sendMessage, sendHello };
+module.exports = { sendMessage };
