@@ -33,6 +33,9 @@ const store = makeInMemoryStore({
   logger: pino().child({ level: "silent", stream: "store" }),
 });
 
+let serverIsRunning = false;
+const PORT = process.env.PORT || 3000;
+
 async function getMessage(key) {
   if (!store) {
     return proto.Message.fromObject({});
@@ -127,14 +130,17 @@ async function connect() {
       }
     } else if (connection === "open") {
       successLog("Fui conectado com sucesso!");
-      const PORT = process.env.PORT || 3000;
 
-      app.listen(PORT, () => {
-        successLog(`Server is running on port ${PORT}`);
-      });
+      if (serverIsRunning === false) {
+        app.listen(PORT, () => {
+          successLog(`Server is running on port ${PORT}`);
+        });
 
-      const router = createRouter(socket);
-      app.use(router);
+        const router = createRouter(socket);
+        app.use(router);
+
+        serverIsRunning = true;
+      }
     } else {
       infoLog("Atualizando conexão...");
     }
