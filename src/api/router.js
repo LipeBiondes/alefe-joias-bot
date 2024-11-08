@@ -4,6 +4,7 @@ const {
   validateMessageBody,
   validateHello,
 } = require("./middlewares/messages.middlewares");
+const { getGoldValue } = require("./controllers/gold.controller");
 
 const createRouter = (socket) => {
   const router = express.Router();
@@ -13,6 +14,8 @@ const createRouter = (socket) => {
   router.post("/send-message", validateMessageBody, (req, res) => {
     sendMessage(req, res, socket);
   });
+
+  router.get("/gold", getGoldValue);
 
   return router;
 };
