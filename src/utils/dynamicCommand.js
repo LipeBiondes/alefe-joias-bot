@@ -19,10 +19,11 @@ exports.dynamicCommand = async (paramsHandler) => {
     createTicket,
     checkIfTheUserHasATicket,
     closeTicket,
+    sendGoldValue,
   } = paramsHandler;
 
   const { type, command } = findCommandImport(commandName);
-  const stop = true; // altere para falso caso queira parar as mensagens.
+  const stop = false; // altere para verdadeiro caso queira parar as mensagens.
 
   if (!verifyPrefix(prefix) || !hasTypeOrCommand({ type, command })) {
     if (stop === false) {
@@ -34,33 +35,33 @@ exports.dynamicCommand = async (paramsHandler) => {
           return;
         } else {
           const message = fullMessage.replace(/\D/g, "");
-          if (message === "1") {
-            await sendText("O preço da grama do ouro é R$ 600,00 reais 💵.");
-            return;
+
+          switch (message) {
+            case "1":
+              await sendGoldValue();
+              break;
+            case "2":
+              await sendText("Você não possui pedidos pendentes 😉.");
+              break;
+            case "3":
+              await createTicket();
+
+              setTimeout(async () => {
+                const hasTicket = await checkIfTheUserHasATicket();
+
+                if (hasTicket) {
+                  await sendText(
+                    "Já se passaram 30 minutos, o ticket será fechado automaticamente 😅.",
+                  );
+
+                  await closeTicket();
+                }
+              }, timeToClose);
+              break;
+            default:
+              await verifyUserExist();
+              break;
           }
-          if (message === "2") {
-            await sendText("Você não possui pedidos pendentes 😉.");
-            return;
-          }
-          if (message === "3") {
-            await createTicket();
-
-            setTimeout(async () => {
-              const hasTicket = await checkIfTheUserHasATicket();
-
-              if (hasTicket) {
-                await sendText(
-                  "Já se passaram 30 minutos, o ticket será fechado automaticamente 😅.",
-                );
-
-                await closeTicket();
-              }
-
-              return;
-            }, timeToClose);
-            return;
-          }
-          verifyUserExist();
         }
       }
     }

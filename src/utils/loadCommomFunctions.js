@@ -406,6 +406,32 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     }
   };
 
+  const sendGoldValue = async () => {
+    await api
+      .get("/gold")
+      .then(async (response) => {
+        const value = response.data.value;
+        const labor = 140;
+        const valueGoldLabor = (parseFloat(value) + labor).toFixed(2);
+
+        const text = `O valor da grama do ouro que vendemos, a vista, é de *R$ ${valueGoldLabor}*.\n\nO valor da grama do ouro bruto 24K é de *R$ ${value}.*\n\nA mão de obra é de *R$ ${labor}.*`;
+
+        await sendSuccessReact();
+        await sendText(text);
+      })
+      .catch(async (err) => {
+        console.log(err);
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Não foi possivel realizer essa operação tente novamente mais tarde!",
+          );
+          return;
+        }
+        await sendErrorReact();
+        await sendText("Erro ao buscar o valor da grama do ouro");
+      });
+  };
   return {
     args,
     commandName,
@@ -447,5 +473,6 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     createTicket,
     checkIfTheUserHasATicket,
     closeTicket,
+    sendGoldValue,
   };
 };
