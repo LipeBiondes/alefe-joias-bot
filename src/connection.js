@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "../.env" });
 const path = require("node:path");
 const { question, onlyNumbers } = require("./utils");
 const process = require("node:process");
@@ -22,6 +23,9 @@ const {
   sayLog,
   successLog,
 } = require("./utils/logger");
+
+const createRouter = require("./api/router");
+const app = require("./api");
 
 const msgRetryCounterCache = new NodeCache();
 
@@ -123,6 +127,14 @@ async function connect() {
       }
     } else if (connection === "open") {
       successLog("Fui conectado com sucesso!");
+      const PORT = process.env.PORT || 3000;
+
+      app.listen(PORT, () => {
+        successLog(`Server is running on port ${PORT}`);
+      });
+
+      const router = createRouter(socket);
+      app.use(router);
     } else {
       infoLog("Atualizando conexão...");
     }

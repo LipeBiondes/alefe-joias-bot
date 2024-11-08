@@ -22,43 +22,46 @@ exports.dynamicCommand = async (paramsHandler) => {
   } = paramsHandler;
 
   const { type, command } = findCommandImport(commandName);
+  const stop = true; // altere para falso caso queira parar as mensagens.
 
   if (!verifyPrefix(prefix) || !hasTypeOrCommand({ type, command })) {
-    if (!fromMe) {
-      const hasTicket = await checkIfTheUserHasATicket();
-      const timeToClose = 1000 * 60 * 30;
+    if (stop === false) {
+      if (!fromMe) {
+        const hasTicket = await checkIfTheUserHasATicket();
+        const timeToClose = 1000 * 60 * 30;
 
-      if (hasTicket) {
-        return;
-      } else {
-        const message = fullMessage.replace(/\D/g, "");
-        if (message === "1") {
-          await sendText("O preço da grama do ouro é R$ 600,00 reais 💵.");
+        if (hasTicket) {
           return;
-        }
-        if (message === "2") {
-          await sendText("Você não possui pedidos pendentes 😉.");
-          return;
-        }
-        if (message === "3") {
-          await createTicket();
-
-          setTimeout(async () => {
-            const hasTicket = await checkIfTheUserHasATicket();
-
-            if (hasTicket) {
-              await sendText(
-                "Já se passaram 30 minutos, o ticket será fechado automaticamente 😅.",
-              );
-
-              await closeTicket();
-            }
-
+        } else {
+          const message = fullMessage.replace(/\D/g, "");
+          if (message === "1") {
+            await sendText("O preço da grama do ouro é R$ 600,00 reais 💵.");
             return;
-          }, timeToClose);
-          return;
+          }
+          if (message === "2") {
+            await sendText("Você não possui pedidos pendentes 😉.");
+            return;
+          }
+          if (message === "3") {
+            await createTicket();
+
+            setTimeout(async () => {
+              const hasTicket = await checkIfTheUserHasATicket();
+
+              if (hasTicket) {
+                await sendText(
+                  "Já se passaram 30 minutos, o ticket será fechado automaticamente 😅.",
+                );
+
+                await closeTicket();
+              }
+
+              return;
+            }, timeToClose);
+            return;
+          }
+          verifyUserExist();
         }
-        verifyUserExist();
       }
     }
 
