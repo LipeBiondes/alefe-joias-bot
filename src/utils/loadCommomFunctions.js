@@ -249,48 +249,56 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
   };
 
   const createTicket = async () => {
-    const userId = await api
-      .get(`/user/${remoteJid}`)
-      .then((response) => {
-        return response.data.user.id;
-      })
-      .catch(async (err) => {
-        if (err.code === "ECONNREFUSED") {
-          await sendErrorReact();
-          await sendText(
-            "Não foi possivel realizer essa operação tente novamente mais tarde!",
-          );
+    if (await checkIfOpeningHours()) {
+      const userId = await api
+        .get(`/user/${remoteJid}`)
+        .then((response) => {
+          return response.data.user.id;
+        })
+        .catch(async (err) => {
+          if (err.code === "ECONNREFUSED") {
+            await sendErrorReact();
+            await sendText(
+              "Não foi possivel realizer essa operação tente novamente mais tarde!",
+            );
+            return false;
+          }
           return false;
-        }
-        return false;
-      });
+        });
 
-    const title = "Atendimento";
-    const description = "Atendimento solicitado pelo cliente";
+      const title = "Atendimento";
+      const description = "Atendimento solicitado pelo cliente";
 
-    const textResponseTicketCreatedSuccessfully =
-      "Você foi encaminhado para um atendente, aguarde um pouco que logo ele vai te responder ⏳";
+      const textResponseTicketCreatedSuccessfully =
+        "Você foi encaminhado para um atendente, aguarde um pouco que logo ele vai te responder ⏳";
 
-    const textResponseTicketCreatedError =
-      "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!";
+      const textResponseTicketCreatedError =
+        "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!";
 
-    await api
-      .post("/ticket", { title, description, userId })
-      .then(async () => {
-        await sendSuccessReact();
-        await sendText(textResponseTicketCreatedSuccessfully);
-      })
-      .catch(async (err) => {
-        if (err.code === "ECONNREFUSED") {
+      await api
+        .post("/ticket", { title, description, userId })
+        .then(async () => {
+          await sendSuccessReact();
+          await sendText(textResponseTicketCreatedSuccessfully);
+        })
+        .catch(async (err) => {
+          if (err.code === "ECONNREFUSED") {
+            await sendErrorReact();
+            await sendText(
+              "Não foi possivel realizer essa operação tente novamente mais tarde!",
+            );
+            return;
+          }
           await sendErrorReact();
-          await sendText(
-            "Não foi possivel realizer essa operação tente novamente mais tarde!",
-          );
-          return;
-        }
-        await sendErrorReact();
-        await sendText(textResponseTicketCreatedError);
-      });
+          await sendText(textResponseTicketCreatedError);
+        });
+    } else {
+      await sendErrorReact();
+      await sendText(
+        "Desculpe, mas estamos fora do horário de atendimento, nosso horário de atendimento é de segunda a sexta das 8h às 12h e das 14h às 18h e aos sábados das 8h às 12h.",
+      );
+      return;
+    }
   };
 
   const checkIfTheUserHasATicket = async () => {
@@ -411,10 +419,10 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       .get("/gold")
       .then(async (response) => {
         const value = response.data.value;
-        const labor = 140;
+        const labor = 140.0;
         const valueGoldLabor = (parseFloat(value) + labor).toFixed(2);
 
-        const text = `O valor da grama do ouro que vendemos, a vista, é de *R$ ${valueGoldLabor}*.\n\nO valor da grama do ouro bruto 24K é de *R$ ${value}.*\n\nA mão de obra é de *R$ ${labor}.*`;
+        const text = `O valor da grama do ouro que vendemos, a vista, é de *R$ ${valueGoldLabor}*\n\nO valor da grama do ouro bruto, na bolsa, 24K é de *R$ ${value}*.`;
 
         await sendSuccessReact();
         await sendText(text);
@@ -432,6 +440,36 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
         await sendText("Erro ao buscar o valor da grama do ouro");
       });
   };
+
+  const checkIfOpeningHours = async () => {
+    const date = new Date();
+    const options = { timeZone: "America/Sao_Paulo", hour12: false };
+    const day = date.toLocaleString("en-US", { ...options, weekday: "short" });
+    const hour = parseInt(
+      date
+        .toLocaleString("en-US", {
+          ...options,
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        .split(":")[0],
+    );
+
+    if (day === "Sun") {
+      return false;
+    }
+
+    if (day === "Sat") {
+      return hour >= 8 && hour < 12;
+    }
+
+    if ((hour >= 8 && hour < 12) || (hour >= 14 && hour < 18)) {
+      return true;
+    }
+
+    return false;
+  };
+
   return {
     args,
     commandName,
@@ -474,5 +512,6 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     checkIfTheUserHasATicket,
     closeTicket,
     sendGoldValue,
+    checkIfOpeningHours,
   };
 };
