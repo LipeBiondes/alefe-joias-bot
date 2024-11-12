@@ -68,19 +68,19 @@ async function connect() {
     getMessage,
   });
 
-  // conectando via link do qr code
-  socket.ev.on("connection.update", (update) => {
-    const { qr } = update;
-    if (qr) {
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}&size=200x200`;
-      console.log(qrCodeUrl);
-    }
-  });
-
-  /*
-  modo de autenticação pelo terminal
   if (!socket.authState.creds.registered) {
-    warningLog("Credenciais ainda não configuradas!");
+    // conectando via link do qr code
+    socket.ev.on("connection.update", (update) => {
+      const { qr } = update;
+      if (qr) {
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}&size=200x200`;
+        console.log(qrCodeUrl);
+      }
+    });
+
+    /**
+     * 
+     *     warningLog("Credenciais ainda não configuradas!");
 
     infoLog('Informe o seu número de telefone (exemplo: "5511920202020"):');
 
@@ -97,8 +97,8 @@ async function connect() {
     const code = await socket.requestPairingCode(onlyNumbers(phoneNumber));
 
     sayLog(`Código de pareamento: ${code}`);
+     */
   }
-*/
 
   socket.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
