@@ -432,8 +432,8 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       .get("/gold")
       .then(async (response) => {
         const value = response.data.value;
-        const labor = 140.0;
-        const valueGoldLabor = (parseFloat(value) + labor).toFixed(2);
+        //        const labor = 140.0;
+        const valueGoldLabor = 530.0; //(parseFloat(value) + labor).toFixed(2);
 
         const text = `O valor da grama do ouro que vendemos, a vista, é de *R$ ${valueGoldLabor}*\n\nO valor da grama do ouro bruto, na bolsa, 24K é de *R$ ${value}*.`;
 
