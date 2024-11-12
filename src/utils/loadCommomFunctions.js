@@ -168,10 +168,6 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       })
       .catch(async (err) => {
         if (err.code === "ECONNREFUSED") {
-          await sendErrorReact();
-          await sendText(
-            "Não foi possivel realizer essa operação tente novamente mais tarde!",
-          );
           return false;
         }
         return false;
@@ -251,7 +247,7 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     // Verifica se está dentro do horário de atendimento
     const isOpeningHours = await checkIfOpeningHours();
 
-    if (!isOpeningHours) {
+    if (isOpeningHours) {
       const user = await getUser();
 
       // Verifica se o usuário existe
@@ -292,13 +288,16 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
           await sendErrorReact();
           await sendText(textResponseTicketCreatedError);
         });
-    } else {
-      await sendErrorReact();
-      await sendText(
-        "Desculpe, mas estamos fora do horário de atendimento, nosso horário de atendimento é de segunda a sexta das 8h às 12h e das 14h às 18h e aos sábados das 8h às 12h.",
-      );
+
       return;
     }
+
+    await sendErrorReact();
+    await sendText(
+      "Desculpe, mas estamos fora do horário de atendimento, nosso horário de atendimento é de segunda a sexta das 8h às 12h e das 14h às 18h e aos sábados das 8h às 12h.",
+    );
+
+    return;
   };
 
   const checkIfTheUserHasATicket = async () => {
