@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../.env" });
 const path = require("node:path");
-const { question, onlyNumbers } = require("./utils");
+//const { question, onlyNumbers } = require("./utils");
 const process = require("node:process");
 const {
   default: makeWASocket,
@@ -20,7 +20,7 @@ const {
   warningLog,
   infoLog,
   errorLog,
-  sayLog,
+  // sayLog,
   successLog,
 } = require("./utils/logger");
 
@@ -68,6 +68,17 @@ async function connect() {
     getMessage,
   });
 
+  // conectando via link do qr code
+  socket.ev.on("connection.update", (update) => {
+    const { qr } = update;
+    if (qr) {
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qr)}&size=200x200`;
+      console.log(qrCodeUrl);
+    }
+  });
+
+  /*
+  modo de autenticação pelo terminal
   if (!socket.authState.creds.registered) {
     warningLog("Credenciais ainda não configuradas!");
 
@@ -87,6 +98,7 @@ async function connect() {
 
     sayLog(`Código de pareamento: ${code}`);
   }
+*/
 
   socket.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
