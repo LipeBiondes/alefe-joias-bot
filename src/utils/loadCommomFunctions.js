@@ -107,16 +107,6 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     return await sendReply(`❌ Erro! ${text}`);
   };
 
-  const sendStickerFromFile = async (file) => {
-    return await socket.sendMessage(
-      remoteJid,
-      {
-        sticker: fs.readFileSync(file),
-      },
-      { quoted: webMessage },
-    );
-  };
-
   const sendStickerFromURL = async (url) => {
     return await socket.sendMessage(
       remoteJid,
@@ -170,6 +160,24 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     );
   };
 
+  const getUser = async () => {
+    return await api
+      .get(`/user/${remoteJid}`)
+      .then((response) => {
+        return response.data.user;
+      })
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Não foi possivel realizer essa operação tente novamente mais tarde!",
+          );
+          return false;
+        }
+        return false;
+      });
+  };
+
   const verifyUserExist = async () => {
     const textResponseUserNotExist =
       "Seja bem vindo(a)! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar" +
@@ -181,27 +189,18 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       pushName +
       "! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar.";
 
-    await api
-      .get(`/user/${remoteJid}`)
-      .then(async () => {
-        await sendText(textResponseUserExist);
-        await sendText(menuMessage());
-      })
-      .catch(async (err) => {
-        if (err.code === "ECONNREFUSED") {
-          await sendErrorReact();
-          await sendText(
-            "Seja bem vindo(a)! eu sou o Alefe, seu assistente virtual da Alefe Jóias, estou aqui para te ajudar",
-          );
-          await sendText(
-            "Houve um erro ao tentar realizar seu cadastro, tente novamente mais tarde!",
-          );
-          return;
-        }
+    const user = await getUser();
 
-        await sendText(textResponseUserNotExist);
-        await createUser(pushName);
-      });
+    // Verifica se o usuário existe
+    if (user === false) {
+      await sendText(textResponseUserNotExist);
+      await createUser(pushName);
+      return;
+    }
+
+    // Se o usuário existir
+    await sendText(textResponseUserExist);
+    await sendText(menuMessage());
   };
 
   const createUser = async (name) => {
@@ -249,22 +248,22 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
   };
 
   const createTicket = async () => {
-    if (await checkIfOpeningHours()) {
-      const userId = await api
-        .get(`/user/${remoteJid}`)
-        .then((response) => {
-          return response.data.user.id;
-        })
-        .catch(async (err) => {
-          if (err.code === "ECONNREFUSED") {
-            await sendErrorReact();
-            await sendText(
-              "Não foi possivel realizer essa operação tente novamente mais tarde!",
-            );
-            return false;
-          }
-          return false;
-        });
+    // Verifica se está dentro do horário de atendimento
+    const isOpeningHours = await checkIfOpeningHours();
+
+    if (!isOpeningHours) {
+      const user = await getUser();
+
+      // Verifica se o usuário existe
+      if (user === false) {
+        await sendErrorReact();
+        await sendText(
+          "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!",
+        );
+        return;
+      }
+
+      const userId = user.id;
 
       const title = "Atendimento";
       const description = "Atendimento solicitado pelo cliente";
@@ -275,6 +274,7 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
       const textResponseTicketCreatedError =
         "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!";
 
+      // Cria o ticket
       await api
         .post("/ticket", { title, description, userId })
         .then(async () => {
@@ -302,22 +302,20 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
   };
 
   const checkIfTheUserHasATicket = async () => {
-    const userId = await api
-      .get(`/user/${remoteJid}`)
-      .then((response) => {
-        return response.data.user.id;
-      })
-      .catch(async (err) => {
-        if (err.code === "ECONNREFUSED") {
-          return false;
-        }
-        return false;
-      });
+    const user = await getUser();
+
+    // Verifica se o usuário existe
+    if (user === false) {
+      return false;
+    }
+
+    const userId = user.id;
 
     if (userId === false) {
       return false;
     }
     if (userId !== false) {
+      // Verifica se o usuário possui um ticket em aberto
       const ticket = await api
         .get(`/tickets/${userId}`)
         .then(async (response) => {
@@ -338,14 +336,67 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     }
   };
 
-  const closeTicket = async () => {
+  const closeTicketByTicketId = async (ticketId) => {
+    const user = await getUser();
+
+    if (user === false) {
+      await sendErrorReact();
+      await sendText(
+        "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!",
+      );
+      return;
+    }
+
+    const userName = user.name;
+
     const textResponseTicketClosedError =
       "Houve um erro ao tentar encerrar o atendimento, tente novamente mais tarde!";
 
-    const user = await api
-      .get(`/user/${remoteJid}`)
-      .then((response) => {
-        return response.data.user;
+    await api
+      .delete(`/ticket/${ticketId}`)
+      .then(async () => {
+        await sendSuccessReact();
+        await sendText(
+          `Atenção ${userName}! O ticket: ${ticketId} foi resolvido e seu atendimento foi encerrado!`,
+        );
+      })
+      .catch(async (err) => {
+        if (err.code === "ECONNREFUSED") {
+          await sendErrorReact();
+          await sendText(
+            "Não foi possivel realizer essa operação tente novamente mais tarde!",
+          );
+          return;
+        }
+        await sendErrorReact();
+        await sendText(textResponseTicketClosedError);
+      });
+  };
+
+  const closeTicket = async () => {
+    const user = await getUser();
+
+    if (user === false) {
+      await sendErrorReact();
+      await sendText(
+        "Houve um erro ao tentar realizar o atendimento, tente novamente mais tarde!",
+      );
+      return false;
+    }
+
+    const userId = user.id;
+
+    // Verifica se o usuário possui um ticket em aberto
+    const tickets = await api
+      .get(`/tickets/${userId}`)
+      .then(async (response) => {
+        if (response.data.ticket.length === 0) {
+          await sendErrorReact();
+          await sendText("Esse usuario não possui atendimento em aberto!");
+          return false;
+        }
+
+        return response.data.ticket;
       })
       .catch(async (err) => {
         if (err.code === "ECONNREFUSED") {
@@ -355,63 +406,26 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
           );
           return false;
         }
+
+        if (err.response.status === 404) {
+          await sendErrorReact();
+          await sendText("Esse usuario não possui atendimento em aberto!");
+          return false;
+        }
+
         await sendErrorReact();
-        await sendText(
-          "Não foi possivel realizer essa operação tente novamente mais tarde!",
-        );
+        await sendText(textResponseTicketClosedError);
         return false;
       });
 
-    if (user !== false) {
-      const ticket = await api
-        .get(`/tickets/${user.id}`)
-        .then((response) => {
-          return response.data.ticket;
-        })
-        .catch(async (err) => {
-          if (err.code === "ECONNREFUSED") {
-            await sendErrorReact();
-            await sendText(
-              "Não foi possivel realizer essa operação tente novamente mais tarde!",
-            );
-            return false;
-          }
-
-          if (err.response.status === 404) {
-            await sendErrorReact();
-            await sendText("Esse usuario não possui atendimento em aberto!");
-            return false;
-          }
-
-          await sendErrorReact();
-          await sendText(textResponseTicketClosedError);
-          return false;
-        });
-
-      if (ticket !== false) {
-        ticket.forEach(async (ticket) => {
-          await api
-            .delete(`/ticket/${ticket.id}`)
-            .then(async () => {
-              await sendSuccessReact();
-              await sendText(
-                `Atenção ${user.name}! O ticket: ${ticket.id} foi resolvido e seu atendimento foi encerrado!`,
-              );
-            })
-            .catch(async (err) => {
-              if (err.code === "ECONNREFUSED") {
-                await sendErrorReact();
-                await sendText(
-                  "Não foi possivel realizer essa operação tente novamente mais tarde!",
-                );
-                return;
-              }
-              await sendErrorReact();
-              await sendText(textResponseTicketClosedError);
-            });
-        });
-      }
+    if (tickets === false) {
+      return;
     }
+
+    // Fecha o ticket
+    tickets.forEach(async (ticket) => {
+      await closeTicketByTicketId(ticket.id);
+    });
   };
 
   const sendGoldValue = async () => {
@@ -428,7 +442,6 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
         await sendText(text);
       })
       .catch(async (err) => {
-        console.log(err);
         if (err.code === "ECONNREFUSED") {
           await sendErrorReact();
           await sendText(
@@ -496,7 +509,6 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     sendImageFromURL,
     sendReact,
     sendReply,
-    sendStickerFromFile,
     sendStickerFromURL,
     sendSuccessReact,
     sendSuccessReply,
@@ -507,8 +519,10 @@ exports.loadCommomFunctions = ({ socket, webMessage }) => {
     sendWarningReact,
     sendWarningReply,
     createUser,
+    getUser,
     verifyUserExist,
     createTicket,
+    closeTicketByTicketId,
     checkIfTheUserHasATicket,
     closeTicket,
     sendGoldValue,
