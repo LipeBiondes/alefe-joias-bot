@@ -1,7 +1,11 @@
+/* eslint-disable no-undef */
+require("dotenv").config();
 const axios = require("axios").default;
 
+const baseURL = process.env.API_BASE_URL || "http://localhost:3333";
+
 const api = axios.create({
-  baseURL: "http://localhost:3333",
+  baseURL,
   timeout: 5000,
   headers: {
     "Content-Type": "application/json",
