@@ -1,4 +1,4 @@
-const removeCaracter = require("src/utils/removeCaracterToNumber");
+const removeCaracter = require("../../utils/removeCaracterToNumber");
 
 const sendMessage = async (req, res, socket) => {
   const { number, message } = req.body;
