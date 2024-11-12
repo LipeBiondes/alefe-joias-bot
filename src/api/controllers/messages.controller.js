@@ -1,8 +1,12 @@
+const removeCaracter = require("src/utils/removeCaracterToNumber");
+
 const sendMessage = async (req, res, socket) => {
   const { number, message } = req.body;
 
+  const numberFormated = `${removeCaracter(number)}@s.whatsapp.net`;
+
   try {
-    await socket.sendMessage(number, {
+    await socket.sendMessage(numberFormated, {
       text: message,
     });
 
